@@ -1,5 +1,5 @@
 use macroquad::prelude::*;
-//put "cargo add macroquad" in termanal to install lib
+//put "cargo add macroquad" in terminal to install lib
 #[macroquad::main("VerletRopes")]
 async fn main() {
     let mut rope_data = create_rope([100.0, 100.0],30.0,17,true); //negative length makes it all clump up
@@ -43,8 +43,36 @@ async fn main() {
                 ToolTypes::Lock => {
                     let point = &mut points[selected];
                     point.locked = !point.locked;
+                },
+                ToolTypes::Point => {
+                    if is_key_down(KeyCode::Tab) {
+                        let (mut new_points, mut new_lines) = create_rope(mouse_position().into(),35.0,15,true);
+                        offset_line_points(&mut new_lines, points.len());
+                        points.append(&mut new_points);
+                        lines.append(&mut new_lines);
+                    } else {
+                        points.push(
+                            Point::new(mouse_position().0, mouse_position().1, true)
+                        );
+                    }
                 }
-                ToolTypes::Point | ToolTypes::Line | ToolTypes::RemovePoint | ToolTypes::LineOtherPoint => todo!()
+                ToolTypes::RemovePoint => {
+                    //swap_remove is O(1) but randoms order
+                    points.remove(selected);
+                    lines.retain_mut(|line| {
+                        if line.a == selected || line.b == selected {
+                            return false;
+                        }
+                        if line.a > selected {
+                            line.a -= 1;
+                        }
+                        if line.b > selected {
+                            line.b -= 1;
+                        }
+                        true
+                    });
+                }
+                ToolTypes::Line | ToolTypes::LineOtherPoint => todo!()
             }
         }
         if is_key_down(KeyCode::Key1) {
@@ -53,11 +81,15 @@ async fn main() {
             tool = ToolTypes::MovePoint;
         } else if is_key_down(KeyCode::Key3) {
             tool = ToolTypes::Point;
+        } else if is_key_down(KeyCode::Key4) {
+            tool = ToolTypes::Lock;
+        } else if is_key_down(KeyCode::Key5) {
+            tool = ToolTypes::RemovePoint;
         }
 
-        if is_key_down(KeyCode::W) {
+        if is_key_pressed(KeyCode::W) {
             steps += 1;
-        } else if is_key_down(KeyCode::S) {
+        } else if is_key_pressed(KeyCode::S) {
             steps -= 1;
         }
 
@@ -99,7 +131,9 @@ impl ToolTypes {
             ToolTypes::Select => {"Select"},
             ToolTypes::MovePoint => {"Move Point"},
             ToolTypes::Lock => {"Throw away the key"},
-            ToolTypes::RemovePoint | ToolTypes::Point | ToolTypes::Line | ToolTypes::LineOtherPoint => todo!()
+            ToolTypes::Point => {"Add point"},
+            ToolTypes::RemovePoint => {"Murder the point and hide the evidence"},
+            ToolTypes::Line | ToolTypes::LineOtherPoint => todo!()
         }
     }
 }
@@ -202,4 +236,11 @@ fn create_rope(start:[f32;2], length:f32, lines:usize, pin_first:bool) -> (Vec<P
     }
 
     (points, rope)
+}
+
+fn offset_line_points(lines: &mut Vec<Line>, offset:usize){
+    for line in lines.iter_mut() {
+        line.a = line.a + offset;
+        line.b = line.b + offset;
+    }
 }
