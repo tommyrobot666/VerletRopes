@@ -2,30 +2,105 @@ use macroquad::prelude::*;
 //put "cargo add macroquad" in termanal to install lib
 #[macroquad::main("VerletRopes")]
 async fn main() {
-    let mut rope_data = create_rope([50.0, 50.0],-10.0,10);
+    let mut rope_data = create_rope([100.0, 100.0],30.0,17,true); //negative length makes it all clump up
     let (points, lines) = (&mut rope_data.0, &mut rope_data.1);
+    let mut sim_paused:bool = true;
+    let mut tool:ToolTypes = ToolTypes::Select;
+    let mut selected:usize = 0;
+    let mut steps = 30;
 
     loop {
         // update
-        if is_key_down(KeyCode::Q) {
+        if is_key_pressed(KeyCode::A) {sim_paused = !sim_paused;}
+        if is_key_down(KeyCode::Q) || !sim_paused {
             simple_force_to_points(points, [0.0, 1.0], 1.0);
-            for _ in 0..1 {
+            for _ in 0..steps {
                 simple_sim_step(lines, points)
             }
         };
+        if is_mouse_button_pressed(MouseButton::Left) {
+            match tool {
+                ToolTypes::Select => {
+                    let (mx,my) = mouse_position();
+
+                    for i in 0..points.len() {
+                        let point = &mut points[i];
+
+                        let dist_x = point.x - mx;
+                        let dist_y = point.y - my;
+
+                        if (dist_x*dist_x + dist_y*dist_y) < 25.0 {
+                            selected = i;
+                            break;
+                        }
+                    }
+                },
+                ToolTypes::MovePoint => {
+                    let point = &mut points[selected];
+                    (point.x, point.y) = mouse_position();
+                    (point.px, point.py) = mouse_position();
+                },
+                ToolTypes::Lock => {
+                    let point = &mut points[selected];
+                    point.locked = !point.locked;
+                }
+                ToolTypes::Point | ToolTypes::Line | ToolTypes::RemovePoint | ToolTypes::LineOtherPoint => todo!()
+            }
+        }
+        if is_key_down(KeyCode::Key1) {
+            tool = ToolTypes::Select;
+        } else if is_key_down(KeyCode::Key2) {
+            tool = ToolTypes::MovePoint;
+        } else if is_key_down(KeyCode::Key3) {
+            tool = ToolTypes::Point;
+        }
+
+        if is_key_down(KeyCode::W) {
+            steps += 1;
+        } else if is_key_down(KeyCode::S) {
+            steps -= 1;
+        }
+
         // draw
         clear_background(BLACK);
 
-        for point in points.iter() {
-            draw_circle(point.x, point.y, 5.0, RED);
-        }
-
         for line in lines.iter() {
             let (a,b) = line.get_both_points(points);
-            draw_line(a.x, a.y, b.x, b.y, 3.0, WHITE);
+            draw_line(a.x, a.y, b.x, b.y, 2.0, WHITE);
         }
 
+        for point in points.iter() {
+            draw_circle(point.x, point.y, 5.0, if point.locked { GOLD } else { RED });
+        }
+
+        let selected_point = &points[selected];
+        draw_circle(selected_point.x, selected_point.y, 4.0, BLUE);
+
+        draw_text(&steps.to_string(),300.0,400.0,20.0,WHITE);
+        draw_text(&tool.to_string(),300.0,430.0,20.0,WHITE);
+
         next_frame().await
+    }
+}
+
+enum ToolTypes {
+    Point,
+    Line,
+    LineOtherPoint,
+    RemovePoint,
+    MovePoint,
+    Lock,
+    Select
+}
+
+impl ToolTypes {
+    fn to_string(&self) -> &'static str {
+        match self {
+            ToolTypes::Select => {"Select"},
+            ToolTypes::MovePoint => {"Move Point"},
+            ToolTypes::Lock => {"Throw away the key"},
+            ToolTypes::RemovePoint | ToolTypes::Point | ToolTypes::Line | ToolTypes::LineOtherPoint => todo!()
+        }
     }
 }
 
@@ -112,10 +187,10 @@ fn simple_sim_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
 }
 
 
-fn create_rope(start:[f32;2],length:f32,lines:usize)-> (Vec<Point>, Vec<Line>) {
+fn create_rope(start:[f32;2], length:f32, lines:usize, pin_first:bool) -> (Vec<Point>, Vec<Line>) {
     let mut next_pos:[f32;2] = [start[0]+length,start[1]];
     let mut points:Vec<Point> = Vec::with_capacity(lines + 1);
-    points.push(Point::new(start[0],start[1],true));
+    points.push(Point::new(start[0], start[1], pin_first));
     for _ in 0..lines {
         points.push(Point::new(next_pos[0], next_pos[1], false));
         next_pos[0] += length;
