@@ -1,3 +1,4 @@
+use std::any::Any;
 use macroquad::prelude::*;
 //put "cargo add macroquad" in terminal to install lib
 #[macroquad::main("VerletRopes")]
@@ -7,7 +8,7 @@ async fn main() {
     let mut sim_paused:bool = true;
     let mut tool:ToolTypes = ToolTypes::Select;
     let mut selected:usize = 0;
-    let mut steps = 30;
+    let mut steps = 15;
 
     loop {
         // update
@@ -72,7 +73,59 @@ async fn main() {
                         true
                     });
                 }
-                ToolTypes::Line | ToolTypes::LineOtherPoint => todo!()
+                ToolTypes::Line => {
+                    // it was supposed to be that Line selects the first point and LineOtherPoint selects the second
+                    // but Select already has one point selected, so only one line tool is needed
+                    // edit: actually, im still going to do that (so that I don't have to switch tools)
+
+
+                    // if i ever update this, remember to just ctrl-c+v all of the code from Select
+                    let (mx,my) = mouse_position();
+                    for i in 0..points.len() {
+                        let point = &mut points[i];
+
+                        let dist_x = point.x - mx;
+                        let dist_y = point.y - my;
+
+                        if (dist_x*dist_x + dist_y*dist_y) < 25.0 {
+                            selected = i;
+                            break;
+                        }
+                    }
+
+                    // the only unique thing that makes this different from Select
+                    tool = ToolTypes::LineOtherPoint;
+                }
+                ToolTypes::LineOtherPoint => {
+                    let mut other_point = selected;
+
+                    // if i ever update this, remember to just ctrl-c+v all of the code from Select
+                    // and change "selected" to other_point
+                    let (mx,my) = mouse_position();
+                    for i in 0..points.len() {
+                        let point = &mut points[i];
+
+                        let dist_x = point.x - mx;
+                        let dist_y = point.y - my;
+
+                        if (dist_x*dist_x + dist_y*dist_y) < 25.0 {
+                            other_point = i;
+                            break;
+                        }
+                    }
+
+                    // the real code
+                    if other_point != selected {
+                        lines.push(
+                            Line {
+                                a: other_point,
+                                b: selected,
+                                length: 40.0,
+                            }
+                        );
+                        tool = ToolTypes::Line;
+                    }
+                }
             }
         }
         if is_key_down(KeyCode::Key1) {
@@ -85,11 +138,13 @@ async fn main() {
             tool = ToolTypes::Lock;
         } else if is_key_down(KeyCode::Key5) {
             tool = ToolTypes::RemovePoint;
+        } else if is_key_down(KeyCode::Key6) {
+            tool = ToolTypes::Line;
         }
 
-        if is_key_pressed(KeyCode::W) {
+        if is_key_pressed(KeyCode::W) || is_key_down(KeyCode::E) {
             steps += 1;
-        } else if is_key_pressed(KeyCode::S) {
+        } else if is_key_pressed(KeyCode::S) || is_key_down(KeyCode::D) {
             steps -= 1;
         }
 
@@ -108,6 +163,13 @@ async fn main() {
         let selected_point = &points[selected];
         draw_circle(selected_point.x, selected_point.y, 4.0, BLUE);
 
+        if tool.to_string() == ToolTypes::LineOtherPoint.to_string() {
+            let point = &points[selected];
+            draw_line(point.x, point.y, mouse_position().0, mouse_position().1, 3.0, GREEN);
+        }
+
+        draw_text(&steps.to_string(),301.0,401.0,20.0,GREEN);
+        draw_text(&tool.to_string(),301.0,431.0,20.0,GREEN);
         draw_text(&steps.to_string(),300.0,400.0,20.0,WHITE);
         draw_text(&tool.to_string(),300.0,430.0,20.0,WHITE);
 
@@ -133,7 +195,8 @@ impl ToolTypes {
             ToolTypes::Lock => {"Throw away the key"},
             ToolTypes::Point => {"Add point"},
             ToolTypes::RemovePoint => {"Murder the point and hide the evidence"},
-            ToolTypes::Line | ToolTypes::LineOtherPoint => todo!()
+            ToolTypes::Line => {"Start the creation of entire universes"},
+            ToolTypes::LineOtherPoint => {"You are now using a different tool!?!? (line ender)"}
         }
     }
 }
