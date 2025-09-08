@@ -1,6 +1,8 @@
-use std::any::Any;
 use macroquad::prelude::*;
 //put "cargo add macroquad" in terminal to install lib
+
+const DEFAULT_COLLISION_RADIUS: f32 = 0.2;
+
 #[macroquad::main("VerletRopes")]
 async fn main() {
     let mut rope_data = create_rope([100.0, 100.0],30.0,17,true); //negative length makes it all clump up
@@ -206,13 +208,14 @@ struct Point {
     pub y:f32,
     pub px:f32,
     pub py:f32,
-    pub locked:bool
+    pub locked:bool,
+    pub collision_radius: f32
 }
 
 impl Point {
     fn new(x:f32,y:f32,locked:bool) -> Point {
         Point {
-            x,y,px:x,py:y,locked
+            x,y,px:x,py:y,locked,collision_radius:DEFAULT_COLLISION_RADIUS
         }
     }
 }
@@ -235,6 +238,20 @@ impl Line {
     }
 }
 
+struct AABB {
+    pub x:f32,
+    pub y:f32,
+    pub width:f32,
+    pub height:f32
+}
+
+impl AABB {
+    fn in_box(&self, point: &Point) -> bool {
+        point.x >= self.x && point.x <= self.x+self.width && point.y >= self.y && point.y <= self.y+self.height;
+    }
+}
+
+#[allow(dead_code)]
 fn simple_forces_to_points(points:&mut Vec<Point>, forces:Vec<[f32;2]>, delta:f32){
     for i in 0..points.len(){
         let point = &mut points[i];
@@ -279,6 +296,30 @@ fn simple_sim_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
         if !b.locked{
             b.x = center[0] - (dir[0] * line.length) / 2.0;
             b.y = center[1] - (dir[1] * line.length) / 2.0;
+        }
+    }
+}
+
+
+fn aabb_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
+    for aabb in aabbs{
+        for point in points{
+            if aabb.in_box(&point){
+                let top_dist = (point.y-aabb.y).abs();
+                let left_dist = (point.x-aabb.x).abs();
+                let bottom_dist = (aabb.y+aabb.height-point.y).abs();
+                let right_dist = (aabb.x+aabb.width-point.x).abs();
+
+                if top_dist<left_dist && top_dist<bottom_dist && top_dist<right_dist {
+                    point.y = aabb.y
+                } else if left_dist<bottom_dist && left_dist<right_dist {
+                    point.x = aabb.x
+                } else if bottom_dist<right_dist {
+                    point.y = aabb.y+aabb.height
+                } else {
+                    point.x = aabb.x+aabb.width
+                }
+            }
         }
     }
 }
