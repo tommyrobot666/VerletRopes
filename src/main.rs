@@ -6,11 +6,12 @@ use macroquad::prelude::*;
 async fn main() {
     let mut rope_data = create_rope([100.0, 100.0],30.0,17,true); //negative length makes it all clump up
     let (points, lines) = (&mut rope_data.0, &mut rope_data.1);
-    let aabbs = &Vec::from([AABB{x:100.0,y:100.0,width:100.0,height:100.0}]);
+    let aabbs = &mut Vec::with_capacity(8);
     let mut sim_paused:bool = true;
     let mut tool:ToolTypes = ToolTypes::Select;
     let mut selected:usize = 0;
     let mut steps = 15;
+    let mut box_corner:[f32;2] = [0.0,0.0];
 
     loop {
         // update
@@ -129,6 +130,21 @@ async fn main() {
                         tool = ToolTypes::Line;
                     }
                 }
+                ToolTypes::AABB => {
+                    box_corner = mouse_position().into();
+                    tool = ToolTypes::AABBOtherPoint;
+                }
+                ToolTypes::AABBOtherPoint => {
+                    aabbs.push(
+                        AABB {
+                            x: box_corner[0],
+                            y: box_corner[1],
+                            width: mouse_position().0-box_corner[0],
+                            height: mouse_position().1-box_corner[1],
+                        }
+                    );
+                    tool = ToolTypes::AABB;
+                }
             }
         }
         if is_key_down(KeyCode::Key1) {
@@ -143,6 +159,8 @@ async fn main() {
             tool = ToolTypes::RemovePoint;
         } else if is_key_down(KeyCode::Key6) {
             tool = ToolTypes::Line;
+        } else if is_key_down(KeyCode::Key7) {
+            tool = ToolTypes::AABB;
         }
 
         if is_key_pressed(KeyCode::W) || is_key_down(KeyCode::E) {
@@ -175,6 +193,10 @@ async fn main() {
             draw_line(point.x, point.y, mouse_position().0, mouse_position().1, 3.0, GREEN);
         }
 
+        if tool.to_string() == ToolTypes::AABBOtherPoint.to_string() {
+            draw_rectangle(box_corner[0], box_corner[1], mouse_position().0-box_corner[0], mouse_position().1-box_corner[1], color::PINK);
+        }
+
         draw_text(&steps.to_string(),301.0,401.0,20.0,GREEN);
         draw_text(&tool.to_string(),301.0,431.0,20.0,GREEN);
         draw_text(&steps.to_string(),300.0,400.0,20.0,WHITE);
@@ -191,7 +213,9 @@ enum ToolTypes {
     RemovePoint,
     MovePoint,
     Lock,
-    Select
+    Select,
+    AABB,
+    AABBOtherPoint
 }
 
 impl ToolTypes {
@@ -204,6 +228,8 @@ impl ToolTypes {
             ToolTypes::RemovePoint => {"Murder the point and hide the evidence"},
             ToolTypes::Line => {"Start the creation of entire universes"},
             ToolTypes::LineOtherPoint => {"You are now using a different tool!?!? (line ender)"}
+            ToolTypes::AABB => {"Make a purple box thing (or else)"},
+            ToolTypes::AABBOtherPoint => {"How big will this box be?"},
         }
     }
 }
