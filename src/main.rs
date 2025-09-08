@@ -1,12 +1,12 @@
+use macroquad::color;
 use macroquad::prelude::*;
 //put "cargo add macroquad" in terminal to install lib
-
-const DEFAULT_COLLISION_RADIUS: f32 = 0.2;
 
 #[macroquad::main("VerletRopes")]
 async fn main() {
     let mut rope_data = create_rope([100.0, 100.0],30.0,17,true); //negative length makes it all clump up
     let (points, lines) = (&mut rope_data.0, &mut rope_data.1);
+    let aabbs = &Vec::from([AABB{x:100.0,y:100.0,width:100.0,height:100.0}]);
     let mut sim_paused:bool = true;
     let mut tool:ToolTypes = ToolTypes::Select;
     let mut selected:usize = 0;
@@ -20,6 +20,7 @@ async fn main() {
             for _ in 0..steps {
                 simple_sim_step(lines, points)
             }
+            aabb_collision(aabbs, points);
         };
         if is_mouse_button_pressed(MouseButton::Left) {
             match tool {
@@ -153,6 +154,10 @@ async fn main() {
         // draw
         clear_background(BLACK);
 
+        for aabb in aabbs.iter() {
+            draw_rectangle(aabb.x, aabb.y, aabb.width, aabb.height, color::MAGENTA);
+        }
+
         for line in lines.iter() {
             let (a,b) = line.get_both_points(points);
             draw_line(a.x, a.y, b.x, b.y, 2.0, WHITE);
@@ -209,13 +214,12 @@ struct Point {
     pub px:f32,
     pub py:f32,
     pub locked:bool,
-    pub collision_radius: f32
 }
 
 impl Point {
     fn new(x:f32,y:f32,locked:bool) -> Point {
         Point {
-            x,y,px:x,py:y,locked,collision_radius:DEFAULT_COLLISION_RADIUS
+            x,y,px:x,py:y,locked
         }
     }
 }
@@ -247,7 +251,7 @@ struct AABB {
 
 impl AABB {
     fn in_box(&self, point: &Point) -> bool {
-        point.x >= self.x && point.x <= self.x+self.width && point.y >= self.y && point.y <= self.y+self.height;
+        point.x >= self.x && point.x <= self.x+self.width && point.y >= self.y && point.y <= self.y+self.height
     }
 }
 
@@ -303,7 +307,7 @@ fn simple_sim_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
 
 fn aabb_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     for aabb in aabbs{
-        for point in points{
+        for point in &mut *points{
             if aabb.in_box(&point){
                 let top_dist = (point.y-aabb.y).abs();
                 let left_dist = (point.x-aabb.x).abs();
