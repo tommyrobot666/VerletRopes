@@ -148,31 +148,41 @@ pub fn simple_resolve_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
     }
 }
 
-/*
-pub fn aabb_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
+
+pub fn aabb_dot_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     for aabb in aabbs{
         for point in &mut *points{
             if aabb.in_box(&point){
-                let top_dist = (point.y-aabb.y).abs();
-                let left_dist = (point.x-aabb.x).abs();
-                let bottom_dist = (aabb.y+aabb.height-point.y).abs();
-                let right_dist = (aabb.x+aabb.width-point.x).abs();
+                let top_dist = (point.pos.y-aabb.pos.y).abs();
+                let left_dist = (point.pos.x-aabb.pos.x).abs();
+                let front_dist = (point.pos.z-aabb.pos.z).abs();
+                let bottom_dist = (aabb.pos.y+aabb.size.y-point.pos.y).abs();
+                let right_dist = (aabb.pos.x+aabb.size.x-point.pos.x).abs();
+                let back_dist = (aabb.pos.z+aabb.size.z-point.pos.z).abs();
 
-                if top_dist<left_dist && top_dist<bottom_dist && top_dist<right_dist {
-                    point.y = aabb.y
+                if front_dist<top_dist && front_dist<left_dist && front_dist<bottom_dist && front_dist<right_dist && front_dist<back_dist {
+                    point.pos.z = aabb.pos.z;
+                } else if back_dist<top_dist && back_dist<left_dist && back_dist<bottom_dist && back_dist<right_dist {
+                    point.pos.z = aabb.pos.z+aabb.size.z;
+                } else if top_dist<left_dist && top_dist<bottom_dist && top_dist<right_dist {
+                    point.pos.y = aabb.pos.y
                 } else if left_dist<bottom_dist && left_dist<right_dist {
-                    point.x = aabb.x
+                    point.pos.x = aabb.pos.x
                 } else if bottom_dist<right_dist {
-                    point.y = aabb.y+aabb.height
+                    point.pos.y = aabb.pos.y+aabb.size.y
                 } else {
-                    point.x = aabb.x+aabb.width
+                    point.pos.x = aabb.pos.x+aabb.size.x
                 }
             }
         }
     }
 }
 
+pub fn aabb_line_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
+    todo!()
+}
 
+/*
 pub fn create_rope(start:[f32;2], length:f32, lines:usize, pin_first:bool) -> (Vec<Point>, Vec<Line>) {
     let mut next_pos:[f32;2] = [start[0]+length,start[1]];
     let mut points:Vec<Point> = Vec::with_capacity(lines + 1);
