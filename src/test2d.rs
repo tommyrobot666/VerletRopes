@@ -5,7 +5,8 @@ use crate::{
 
 use macroquad::color;
 use macroquad::prelude::*;
-async fn main() {
+
+pub async fn main() {
     let mut rope_data = create_rope([100.0, 100.0],30.0,17,true); //negative length makes it all clump up
     let (points, lines) = (&mut rope_data.0, &mut rope_data.1);
     let aabbs = &mut Vec::with_capacity(8);
@@ -204,6 +205,10 @@ async fn main() {
         draw_text(&steps.to_string(),300.0,400.0,20.0,WHITE);
         draw_text(&tool.to_string(),300.0,430.0,20.0,WHITE);
 
+        // return to test select
+        if is_key_down(KeyCode::Escape) {
+            break;
+        }
         next_frame().await
     }
 }
