@@ -1,6 +1,20 @@
 use std::ops;
+use crate::verletcore::{Line};
 
-pub struct Line(crate::verletcore::Line);
+// You can do this to make a thing seperate
+// But then you have to use thing.0.property instead of thing.property (very annoying)
+// if you "impl Deref for" and "impl DerefMut for" self.0, it will go back to thing.property
+/*pub struct Line(crate::verletcore::Line);
+
+impl ops::Deref for Line {
+    type Target = crate::verletcore::Line;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}*/
+// this code was removed because only one struct named "Line" can exist per crate
+
 
 // Clone and Copy are same.
 // Copy is done automatically, Clone needs you to use .clone()
@@ -90,8 +104,15 @@ impl AABB {
 
 
 impl Line {
-    pub fn get_both_points<'a>(&self, points: &'a mut [Point]) -> (&'a mut Point, &'a mut Point) {
-        (&mut points[self.0.a], &mut points[self.0.b])
+    // i want to call this "get_both_points"
+    pub fn get_points<'a>(&self, points: &'a mut [Point]) -> (&'a mut Point, &'a mut Point) {
+        if self.a < self.b {
+            let (first, second) = points.split_at_mut(self.b);
+            (&mut first[self.a], &mut second[0])
+        } else {
+            let (first, second) = points.split_at_mut(self.a);
+            (&mut second[0], &mut first[self.b])
+        }
     }
 }
 
@@ -110,28 +131,24 @@ pub fn simple_velocity_step(points:&mut Vec<Point>, force:Vector3, delta:f32) {
         point.prev_pos = prev_pos;
     }
 }
-/*
+
 pub fn simple_resolve_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
     for i in 0..lines.len() {
         let line:&mut Line = &mut lines[i];
-        let (a,b) = line.get_both_points(points);
-        let center:Vector3 = a.pos
-        let mut dir:[f32;2] = [a.x-b.x,a.y-b.y];
-        // normalize dir
-        let dir_len:f32 = (dir[0]*dir[0]+dir[1]*dir[1]).sqrt(); dir[0] = dir[0]/dir_len; dir[1] = dir[1]/dir_len;
+        let (a,b) = line.get_points(points);
+        let center:Vector3 = (a.pos+b.pos)*0.5;
+        let mut dir:Vector3= a.pos-b.pos*(1.0/(a.pos-b.pos).length());
 
         if !a.locked{
-            a.x = center[0] + (dir[0] * line.length) / 2.0;
-            a.y = center[1] + (dir[1] * line.length) / 2.0;
+            a.pos = center + dir * line.length * 0.5;
         }
         if !b.locked{
-            b.x = center[0] - (dir[0] * line.length) / 2.0;
-            b.y = center[1] - (dir[1] * line.length) / 2.0;
+            b.pos = center - dir * line.length * 0.5;
         }
     }
 }
 
-
+/*
 pub fn aabb_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     for aabb in aabbs{
         for point in &mut *points{
