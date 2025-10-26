@@ -1,6 +1,10 @@
 use std::ops;
 use crate::verletcore::{Line};
 
+// Clone and Copy are same.
+// Copy is done automatically, Clone needs you to use .clone()
+// Copy is "bitwise", Clone can use any computations
+#[derive(Clone, Copy)]
 pub struct Vector3 {
     pub x:f32,
     pub y:f32,
@@ -27,6 +31,30 @@ impl ops::Add<Vector3> for Vector3 {
 
     fn add(self, rhs: Vector3) -> Vector3 {
         Vector3{x:self.x+rhs.x, y:self.y+rhs.y, z:self.z+rhs.z}
+    }
+}
+
+impl ops::Add<f32> for Vector3 {
+    type Output = Vector3;
+
+    fn add(self, rhs: f32) -> Vector3 {
+        Vector3{x:self.x+rhs, y:self.y+rhs, z:self.z+rhs}
+    }
+}
+
+impl ops::Sub<Vector3> for Vector3 {
+    type Output = Vector3;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Vector3{x:self.x-rhs.x, y:self.y-rhs.y, z:self.z-rhs.z}
+    }
+}
+
+impl ops::Mul<f32> for Vector3 {
+    type Output = Vector3;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Vector3{x:self.x*rhs, y:self.y*rhs, z:self.z*rhs}
     }
 }
 
@@ -61,21 +89,22 @@ impl AABB {
 
 
 
-// new code stopps here
-pub fn simple_force_to_points(points:&mut Vec<Point>, force:[f32;2], delta:f32) {
+
+/**
+This function also applies velocity
+**/
+pub fn simple_force_to_points(points:&mut Vec<Point>, force:Vector3, delta:f32) {
     for i in 0..points.len(){
         let point = &mut points[i];
         if point.locked{continue}
 
-        let prev_pos:Vector3 = point.pos.copy();
-        point.x += (point.x - point.px) + force[0] * delta * delta;
-        point.y += (point.y - point.py) + force[1] * delta * delta;
-        point.px = prev_pos[0];
-        point.py = prev_pos[1];
+        let prev_pos: Vector3 = point.pos.clone();
+        point.pos = point.pos + ((point.pos - point.prev_pos) + force * delta * delta);
+        point.prev_pos = prev_pos;
     }
 }
 
-
+// changes stop herre
 pub fn simple_sim_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
     for i in 0..lines.len() {
         let line:&mut Line = &mut lines[i];
