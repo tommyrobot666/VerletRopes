@@ -135,10 +135,3 @@ pub fn create_rope(start:[f32;2], length:f32, lines:usize, pin_first:bool) -> (V
 
     (points, rope)
 }
-
-pub fn offset_line_points(lines: &mut Vec<Line>, offset:usize){
-    for line in lines.iter_mut() {
-        line.a = line.a + offset;
-        line.b = line.b + offset;
-    }
-}

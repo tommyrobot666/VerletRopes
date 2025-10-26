@@ -31,3 +31,11 @@ impl ToolTypes {
         }
     }
 }
+
+
+pub fn offset_line_points(lines: &mut Vec<Line>, offset:usize){
+    for line in lines.iter_mut() {
+        line.a = line.a + offset;
+        line.b = line.b + offset;
+    }
+}
