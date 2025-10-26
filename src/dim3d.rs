@@ -1,5 +1,5 @@
 use std::ops;
-use crate::verletcore::{Line};
+use crate::verletcore::{Line,offset_line_points};
 
 // You can do this to make a thing seperate
 // But then you have to use thing.0.property instead of thing.property (very annoying)
@@ -118,6 +118,7 @@ impl Line {
 
 
 
+
 /**
 This function also applies velocity
 **/
@@ -198,4 +199,11 @@ pub fn create_rope(start:Vector3, length:f32, lines:usize, pin_first:bool) -> (V
     }
 
     (points, rope)
+}
+
+
+fn combine_simulations(universe:(&mut Vec<Point>, &mut Vec<Line>), mut new_universe:(Vec<Point>, Vec<Line>)) {
+    offset_line_points(&mut new_universe.1,universe.1.len());
+    universe.0.append(&mut new_universe.0);
+    universe.1.append(&mut new_universe.1);
 }
