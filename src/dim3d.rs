@@ -182,14 +182,14 @@ pub fn aabb_line_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     todo!()
 }
 
-/*
-pub fn create_rope(start:[f32;2], length:f32, lines:usize, pin_first:bool) -> (Vec<Point>, Vec<Line>) {
-    let mut next_pos:[f32;2] = [start[0]+length,start[1]];
+
+pub fn create_rope(start:Vector3, length:f32, lines:usize, pin_first:bool) -> (Vec<Point>, Vec<Line>) {
+    let mut next_pos:Vector3 = start+length;
     let mut points:Vec<Point> = Vec::with_capacity(lines + 1);
-    points.push(Point::new(start[0], start[1], pin_first));
+    points.push(Point::new(start.x, start.y, start.z, pin_first));
     for _ in 0..lines {
-        points.push(Point::new(next_pos[0], next_pos[1], false));
-        next_pos[0] += length;
+        points.push(Point::new(next_pos.x, next_pos.y, next_pos.z, false));
+        next_pos = next_pos+length;
     }
 
     let mut rope:Vec<Line> = Vec::with_capacity(lines);
@@ -199,7 +199,7 @@ pub fn create_rope(start:[f32;2], length:f32, lines:usize, pin_first:bool) -> (V
 
     (points, rope)
 }
-
+/*
 pub fn offset_line_points(lines: &mut Vec<Line>, offset:usize){
     for line in lines.iter_mut() {
         line.a = line.a + offset;
