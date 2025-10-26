@@ -1,5 +1,6 @@
 use std::ops;
-use crate::verletcore::{Line};
+
+pub struct Line(crate::verletcore::Line);
 
 // Clone and Copy are same.
 // Copy is done automatically, Clone needs you to use .clone()
@@ -88,28 +89,33 @@ impl AABB {
 }
 
 
+impl Line {
+    pub fn get_both_points<'a>(&self, points: &'a mut [Point]) -> (&'a mut Point, &'a mut Point) {
+        (&mut points[self.0.a], &mut points[self.0.b])
+    }
+}
+
 
 
 /**
 This function also applies velocity
 **/
-pub fn simple_force_to_points(points:&mut Vec<Point>, force:Vector3, delta:f32) {
+pub fn simple_velocity_step(points:&mut Vec<Point>, force:Vector3, delta:f32) {
     for i in 0..points.len(){
         let point = &mut points[i];
         if point.locked{continue}
 
         let prev_pos: Vector3 = point.pos.clone();
-        point.pos = point.pos + ((point.pos - point.prev_pos) + force * delta * delta);
+        point.pos = point.pos * 2.0 - point.prev_pos + force * delta * delta;
         point.prev_pos = prev_pos;
     }
 }
-
-// changes stop herre
-pub fn simple_sim_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
+/*
+pub fn simple_resolve_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
     for i in 0..lines.len() {
         let line:&mut Line = &mut lines[i];
         let (a,b) = line.get_both_points(points);
-        let center:[f32;2] = [(a.x+b.x)/2.0,(a.y+b.y)/2.0];
+        let center:Vector3 = a.pos
         let mut dir:[f32;2] = [a.x-b.x,a.y-b.y];
         // normalize dir
         let dir_len:f32 = (dir[0]*dir[0]+dir[1]*dir[1]).sqrt(); dir[0] = dir[0]/dir_len; dir[1] = dir[1]/dir_len;
@@ -172,4 +178,4 @@ pub fn offset_line_points(lines: &mut Vec<Line>, offset:usize){
         line.a = line.a + offset;
         line.b = line.b + offset;
     }
-}
+}*/
