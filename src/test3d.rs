@@ -17,6 +17,7 @@ pub async fn main() {
 
     loop {
         // update
+        let screen_size = (screen_width(),screen_height());
         if is_key_pressed(KeyCode::A) {sim_paused = !sim_paused;}
         if is_key_down(KeyCode::Q) || !sim_paused {
             simple_velocity_step(points, Vector3{x:0.0,y:1.0,z:0.0}, 1.0);
@@ -26,7 +27,7 @@ pub async fn main() {
             aabb_dot_collision(aabbs, points);
         };
         if tool != ToolTypes::Line {
-            let point_near_mouse = get_point_near_mouse(points);
+            let point_near_mouse = get_point_near_mouse(points,screen_size);
             if !point_near_mouse.is_none() {
                 selected = point_near_mouse.unwrap();
             }
@@ -38,15 +39,20 @@ pub async fn main() {
                 },
                 ToolTypes::MovePoint => {
                     let point = &mut points[selected];
-                    (point.pos.x, point.pos.y) = mouse_position();
-                    (point.prev_pos.x, point.prev_pos.y) = mouse_position();
+                    let mut mouse_pos = mouse_position();
+                    mouse_pos.0 = mouse_pos.0 / (screen_size.0 * 1.0) * point.pos.z;
+                    mouse_pos.1 = mouse_pos.1 / (screen_size.1 * 1.0) * point.pos.z;
+                    (point.pos.x, point.pos.y) = mouse_pos;
+                    (point.prev_pos.x, point.prev_pos.y) = mouse_pos;
                 },
                 ToolTypes::Lock => {
                     let point = &mut points[selected];
                     point.locked = !point.locked;
                 },
                 ToolTypes::Point => {
-                    let (mx,my) = mouse_position();
+                    let (mut mx,mut my) = mouse_position();
+                    mx = mx / (screen_size.0 * 1.0) * 100.0;
+                    my = my / (screen_size.1 * 1.0) * 100.0;
                     if is_key_down(KeyCode::Tab) {
                         combine_simulations((points,lines),create_rope(Vector3{x:mx,y:my,z:100.0},35.0,15,true));
                     } else {
@@ -72,7 +78,7 @@ pub async fn main() {
                     });
                 }
                 ToolTypes::Line => {
-                    let point_near_mouse = get_point_near_mouse(points);
+                    let point_near_mouse = get_point_near_mouse(points,screen_size);
 
                     if !point_near_mouse.is_none() {
                         let point = point_near_mouse.unwrap();
@@ -89,10 +95,14 @@ pub async fn main() {
                 }
                 ToolTypes::AABB => {
                     box_corner = mouse_position().into();
+                    box_corner.0 = box_corner.0 / (screen_size.0 * 1.0) * 50.0;
+                    box_corner.1 = box_corner.1 / (screen_size.1 * 1.0) * 50.0;
                     tool = ToolTypes::AABBOtherPoint;
                 }
                 ToolTypes::AABBOtherPoint => {
-                    let other_box_corner: (f32,f32) = mouse_position().into();
+                    let mut other_box_corner: (f32,f32) = mouse_position().into();
+                    other_box_corner.0 = other_box_corner.0 / screen_size.0 * 1.0;
+                    other_box_corner.1 = other_box_corner.1 / screen_size.1 * 1.0;
                     aabbs.push(
                         AABB {
                             pos: Vector3{x:box_corner.0,y:box_corner.1,z:50.0},
@@ -130,25 +140,27 @@ pub async fn main() {
 
         // draw
         clear_background(BLACK);
-        let screen_size = (screen_width(),screen_height());
 
         for aabb in aabbs.iter() {
-            let pos1 = aabb.pos.project_vertex_screen(screen_size, 1.0);
-            let pos2 = (aabb.pos + aabb.size).project_vertex_screen(screen_size, 1.0);
-            draw_rectangle(pos1.0, pos1.1, pos2.0, pos2.1, MAGENTA);
+            if aabb.pos.on_screen(screen_size, 1.0) || aabb.size.on_screen(screen_size, 1.0) {
+                let pos1 = aabb.pos.project_vertex_screen(screen_size, 1.0);
+                let pos2 = (aabb.pos + aabb.size).project_vertex_screen(screen_size, 1.0);
+                draw_rectangle(pos1.0, pos1.1, pos2.0, pos2.1, MAGENTA);
+            }
         }
 
         for line in lines.iter() {
             let (a,b) = line.get_points(points);
-            let pos1 = a.pos.project_vertex_screen(screen_size, 1.0);
-            let pos2 = b.pos.project_vertex_screen(screen_size, 1.0);
-            draw_line(pos1.0, pos1.1, pos2.0, pos2.1, 2.0, WHITE);
+            if a.pos.on_screen(screen_size, 1.0) || b.pos.on_screen(screen_size, 1.0) {
+                let pos1 = a.pos.project_vertex_screen(screen_size, 1.0);
+                let pos2 = b.pos.project_vertex_screen(screen_size, 1.0);
+                draw_line(pos1.0, pos1.1, pos2.0, pos2.1, 2.0, WHITE);
+            }
         }
 
         for point in points.iter() {
             if point.pos.on_screen(screen_size, 1.0) {
                 let pos1 = point.pos.project_vertex_screen(screen_size, 1.0);
-                println!("{},{}", pos1.0, pos1.1);
                 draw_circle(pos1.0, pos1.1, 5.0, if point.locked { GOLD } else { RED });
             }
         }
@@ -182,14 +194,15 @@ pub async fn main() {
     }
 }
 
-fn get_point_near_mouse(points:&mut Vec<Point>) -> Option<usize> {
+fn get_point_near_mouse(points:&mut Vec<Point>, screen_size:(f32,f32)) -> Option<usize> {
     let (mx,my) = mouse_position();
 
     for i in 0..points.len() {
-        let point = &mut points[i];
+        let point = &points[i];
+        let proj = point.pos.project_vertex_screen(screen_size, 1.0);
 
-        let dist_x = (point.pos.x * screen_width() * 1.0) - mx;
-        let dist_y = (point.pos.y * screen_height() * 1.0) - my;
+        let dist_x = proj.0 - mx;
+        let dist_y = proj.1 - my;
 
         if (dist_x*dist_x + dist_y*dist_y) < 100.0 {
             return Some(i);
