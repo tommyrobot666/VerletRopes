@@ -39,9 +39,7 @@ pub async fn main() {
                 },
                 ToolTypes::MovePoint => {
                     let point = &mut points[selected];
-                    let mut mouse_pos = mouse_position();
-                    mouse_pos.0 = mouse_pos.0 / (screen_size.0 * 1.0) * point.pos.z;
-                    mouse_pos.1 = mouse_pos.1 / (screen_size.1 * 1.0) * point.pos.z;
+                    let mouse_pos = mouse_to_world(point.pos.z,screen_size);
                     (point.pos.x, point.pos.y) = mouse_pos;
                     (point.prev_pos.x, point.prev_pos.y) = mouse_pos;
                 },
@@ -50,9 +48,7 @@ pub async fn main() {
                     point.locked = !point.locked;
                 },
                 ToolTypes::Point => {
-                    let (mut mx,mut my) = mouse_position();
-                    mx = mx / (screen_size.0 * 1.0) * 100.0;
-                    my = my / (screen_size.1 * 1.0) * 100.0;
+                    let (mx,my) = mouse_to_world(100.0, screen_size);
                     if is_key_down(KeyCode::Tab) {
                         combine_simulations((points,lines),create_rope(Vector3{x:mx,y:my,z:100.0},35.0,15,true));
                     } else {
@@ -94,19 +90,15 @@ pub async fn main() {
                     }
                 }
                 ToolTypes::AABB => {
-                    box_corner = mouse_position().into();
-                    box_corner.0 = box_corner.0 / (screen_size.0 * 1.0) * 50.0;
-                    box_corner.1 = box_corner.1 / (screen_size.1 * 1.0) * 50.0;
+                    box_corner = mouse_to_world(100.0, screen_size);
                     tool = ToolTypes::AABBOtherPoint;
                 }
                 ToolTypes::AABBOtherPoint => {
-                    let mut other_box_corner: (f32,f32) = mouse_position().into();
-                    other_box_corner.0 = other_box_corner.0 / screen_size.0 * 1.0;
-                    other_box_corner.1 = other_box_corner.1 / screen_size.1 * 1.0;
+                    let mut other_box_corner = mouse_to_world(100.0, screen_size);
                     aabbs.push(
                         AABB {
                             pos: Vector3{x:box_corner.0,y:box_corner.1,z:50.0},
-                            size: Vector3{x:other_box_corner.0*100.0,y:other_box_corner.1*100.0,z:100.0}
+                            size: Vector3{x:box_corner.0-other_box_corner.0,y:box_corner.1-other_box_corner.1,z:100.0}
                         }
                     );
                     tool = ToolTypes::AABB;
@@ -209,4 +201,10 @@ fn get_point_near_mouse(points:&mut Vec<Point>, screen_size:(f32,f32)) -> Option
         }
     }
     None
+}
+
+fn mouse_to_world(z:f32, screen_size:(f32,f32)) -> (f32,f32) {
+    let (mx,my) = mouse_position();
+    (mx / (screen_size.0 * 1.0) * z,
+    my / (screen_size.1 * 1.0) * z)
 }
