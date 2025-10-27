@@ -147,6 +147,7 @@ pub async fn main() {
 
         for point in points.iter() {
             let pos1 = point.pos.project_vertex_screen(screen_size);
+            println!("{},{}", pos1.0,pos1.1);
             draw_circle(pos1.0, pos1.1, 5.0, if point.locked { GOLD } else { RED });
         }
 

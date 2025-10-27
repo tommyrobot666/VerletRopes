@@ -192,7 +192,7 @@ pub fn aabb_dot_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     }
 }
 
-#[allow(unused_variables)]
+#[allow(unused_variables,dead_code)]
 pub fn aabb_line_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     todo!()
 }
