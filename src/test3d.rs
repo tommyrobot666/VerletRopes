@@ -3,7 +3,6 @@ use crate::{
     dim3d::{*}
 };
 
-use macroquad::color;
 use macroquad::prelude::*;
 
 pub async fn main() {
@@ -14,7 +13,7 @@ pub async fn main() {
     let mut tool:ToolTypes = ToolTypes::Select;
     let mut selected:usize = 0;
     let mut steps = 15;
-    let mut box_corner:[f32;2] = [0.0,0.0];
+    let mut box_corner: (f32,f32) = (0.0,0.0); // type of [f32;2] caused no error, but looked wierd
 
     loop {
         // update
@@ -93,11 +92,11 @@ pub async fn main() {
                     tool = ToolTypes::AABBOtherPoint;
                 }
                 ToolTypes::AABBOtherPoint => {
-                    let other_box_corner = mouse_position().into();
+                    let other_box_corner: (f32,f32) = mouse_position().into();
                     aabbs.push(
                         AABB {
-                            pos: Vector3{x:box_corner[0],y:box_corner[1],z:50.0},
-                            size: Vector3{x:other_box_corner[0]*100.0,y:other_box_corner[1]*100.0,z:100.0}
+                            pos: Vector3{x:box_corner.0,y:box_corner.1,z:50.0},
+                            size: Vector3{x:other_box_corner.0*100.0,y:other_box_corner.1*100.0,z:100.0}
                         }
                     );
                     tool = ToolTypes::AABB;
@@ -164,7 +163,7 @@ pub async fn main() {
         }
 
         if tool.to_string() == ToolTypes::AABBOtherPoint.to_string() {
-            draw_rectangle(box_corner[0], box_corner[1], mouse_position().0-box_corner[0], mouse_position().1-box_corner[1], PINK);
+            draw_rectangle(box_corner.0, box_corner.1, mouse_position().0-box_corner.0, mouse_position().1-box_corner.1, PINK);
         }
 
         draw_text(&steps.to_string(),301.0,401.0,20.0,RED);

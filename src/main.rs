@@ -41,7 +41,7 @@ async fn main() {
                 test2d::main().await
             }
             Test::Dim3D => {
-                panic!("not implyemented");
+                test3d::main().await
             }
         }
     }

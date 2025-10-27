@@ -151,7 +151,7 @@ pub fn simple_resolve_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
         let line:&mut Line = &mut lines[i];
         let (a,b) = line.get_points(points);
         let center:Vector3 = (a.pos+b.pos)*0.5;
-        let mut dir:Vector3= a.pos-b.pos*(1.0/(a.pos-b.pos).length());
+        let dir:Vector3= a.pos-b.pos*(1.0/(a.pos-b.pos).length());
 
         if !a.locked{
             a.pos = center + dir * line.length * 0.5;
@@ -192,6 +192,7 @@ pub fn aabb_dot_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     }
 }
 
+#[allow(unused_variables)]
 pub fn aabb_line_collision(aabbs:&Vec<AABB>,points:&mut Vec<Point>){
     todo!()
 }
