@@ -2,6 +2,7 @@ mod dim2d;
 mod verletcore;
 mod test2d;
 mod dim3d;
+mod test3d;
 
 use macroquad::prelude::*;
 //put "cargo add macroquad" in terminal to install lib

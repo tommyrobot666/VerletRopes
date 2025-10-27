@@ -38,7 +38,20 @@ impl Vector3 {
         self.length_f().sqrt()
     }
 
+    pub fn project_vertex(&self) -> (f32,f32) {
+        (self.x/self.z, self.y/self.z)
+    }
 
+    pub fn project_vertex_screen(&self,size:(f32,f32)) -> (f32,f32) {
+        let proj = self.project_vertex();
+        (proj.0*size.0,proj.1*size.1)
+    }
+
+    pub fn on_screen(&self,size:(f32,f32)) -> bool {
+        let proj = self.project_vertex_screen(size);
+        proj.0 >= 0.0 && proj.1 >= 0.0
+        && proj.0 <= size.0 && proj.1 <= size.1
+    }
 }
 
 impl ops::Add<Vector3> for Vector3 {
@@ -202,7 +215,7 @@ pub fn create_rope(start:Vector3, length:f32, lines:usize, pin_first:bool) -> (V
 }
 
 
-fn combine_simulations(universe:(&mut Vec<Point>, &mut Vec<Line>), mut new_universe:(Vec<Point>, Vec<Line>)) {
+pub fn combine_simulations(universe:(&mut Vec<Point>, &mut Vec<Line>), mut new_universe:(Vec<Point>, Vec<Line>)) {
     offset_line_points(&mut new_universe.1,universe.1.len());
     universe.0.append(&mut new_universe.0);
     universe.1.append(&mut new_universe.1);
