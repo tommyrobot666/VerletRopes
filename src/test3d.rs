@@ -19,7 +19,7 @@ pub async fn main() {
         // update
         let screen_size = (screen_width(),screen_height());
         if is_key_pressed(KeyCode::A) {sim_paused = !sim_paused;}
-        if is_key_down(KeyCode::Q) || !sim_paused {
+        if is_key_pressed(KeyCode::Q) || !sim_paused {
             simple_velocity_step(points, Vector3{x:0.0,y:1.0,z:0.0}, 1.0);
             for _ in 0..steps {
                 simple_resolve_step(lines, points)
@@ -90,15 +90,15 @@ pub async fn main() {
                     }
                 }
                 ToolTypes::AABB => {
-                    box_corner = mouse_to_world(100.0, screen_size);
+                    box_corner = mouse_to_world(500.0, screen_size);
                     tool = ToolTypes::AABBOtherPoint;
                 }
                 ToolTypes::AABBOtherPoint => {
-                    let mut other_box_corner = mouse_to_world(100.0, screen_size);
+                    let other_box_corner = mouse_to_world(500.0, screen_size);
                     aabbs.push(
                         AABB {
-                            pos: Vector3{x:box_corner.0,y:box_corner.1,z:50.0},
-                            size: Vector3{x:box_corner.0-other_box_corner.0,y:box_corner.1-other_box_corner.1,z:100.0}
+                            pos: Vector3{x:box_corner.0,y:box_corner.1,z:500.0},
+                            size: Vector3{x:(box_corner.0-other_box_corner.0)*5.0,y:(box_corner.1-other_box_corner.1)*5.0,z:1000.0}
                         }
                     );
                     tool = ToolTypes::AABB;
@@ -143,7 +143,7 @@ pub async fn main() {
 
         for line in lines.iter() {
             let (a,b) = line.get_points(points);
-            if a.pos.on_screen(screen_size, 1.0) || b.pos.on_screen(screen_size, 1.0) {
+            if a.pos.on_screen(screen_size, 1.0) || b.pos.on_screen(screen_size, 1.0) || true {
                 let pos1 = a.pos.project_vertex_screen(screen_size, 1.0);
                 let pos2 = b.pos.project_vertex_screen(screen_size, 1.0);
                 draw_line(pos1.0, pos1.1, pos2.0, pos2.1, 2.0, WHITE);
@@ -170,7 +170,10 @@ pub async fn main() {
         }
 
         if tool.to_string() == ToolTypes::AABBOtherPoint.to_string() {
-            draw_rectangle(box_corner.0, box_corner.1, mouse_position().0-box_corner.0, mouse_position().1-box_corner.1, PINK);
+            draw_rectangle(box_corner.0 * screen_size.0 * 500.0 * 1.0,
+                           box_corner.1 * screen_size.1 * 500.0 * 1.0,
+                           mouse_position().0-(box_corner.0 * screen_size.0 * 500.0 * 1.0),
+                           mouse_position().1-(box_corner.1 * screen_size.1 * 500.0 * 1.0), PINK);
         }
 
         draw_text(&steps.to_string(),301.0,401.0,20.0,RED);

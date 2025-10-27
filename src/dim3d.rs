@@ -154,7 +154,7 @@ pub fn simple_resolve_step(lines:&mut Vec<Line>,points:&mut Vec<Point>){
         let line:&mut Line = &mut lines[i];
         let (a,b) = line.get_points(points);
         let center:Vector3 = (a.pos+b.pos)*0.5;
-        let dir:Vector3= a.pos-b.pos*(1.0/(a.pos-b.pos).length());
+        let dir:Vector3= (a.pos-b.pos)*(1.0/(a.pos-b.pos).length());
 
         if !a.locked{
             a.pos = center + dir * line.length * 0.5;
@@ -220,7 +220,7 @@ pub fn create_rope(start:Vector3, length:f32, lines:usize, pin_first:bool) -> (V
 
 
 pub fn combine_simulations(universe:(&mut Vec<Point>, &mut Vec<Line>), mut new_universe:(Vec<Point>, Vec<Line>)) {
-    offset_line_points(&mut new_universe.1,universe.1.len());
+    offset_line_points(&mut new_universe.1,universe.0.len());
     universe.0.append(&mut new_universe.0);
     universe.1.append(&mut new_universe.1);
 }
