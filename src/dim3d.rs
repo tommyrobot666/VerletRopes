@@ -39,16 +39,19 @@ impl Vector3 {
     }
 
     pub fn project_vertex(&self) -> (f32,f32) {
+        if self.z <= 0.0 {
+            return (f32::INFINITY,f32::INFINITY)
+        }
         (self.x/self.z, self.y/self.z)
     }
 
-    pub fn project_vertex_screen(&self,size:(f32,f32)) -> (f32,f32) {
+    pub fn project_vertex_screen(&self,size:(f32,f32),scale:f32) -> (f32,f32) {
         let proj = self.project_vertex();
-        (proj.0*size.0,proj.1*size.1)
+        (proj.0*size.0*scale,proj.1*size.1*scale)
     }
 
-    pub fn on_screen(&self,size:(f32,f32)) -> bool {
-        let proj = self.project_vertex_screen(size);
+    pub fn on_screen(&self,size:(f32,f32),scale:f32) -> bool {
+        let proj = self.project_vertex_screen(size,scale);
         proj.0 >= 0.0 && proj.1 >= 0.0
         && proj.0 <= size.0 && proj.1 <= size.1
     }

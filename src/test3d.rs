@@ -133,33 +133,35 @@ pub async fn main() {
         let screen_size = (screen_width(),screen_height());
 
         for aabb in aabbs.iter() {
-            let pos1 = aabb.pos.project_vertex_screen(screen_size);
-            let pos2 = (aabb.pos + aabb.size).project_vertex_screen(screen_size);
+            let pos1 = aabb.pos.project_vertex_screen(screen_size, 0.1);
+            let pos2 = (aabb.pos + aabb.size).project_vertex_screen(screen_size, 0.1);
             draw_rectangle(pos1.0, pos1.1, pos2.0, pos2.1, MAGENTA);
         }
 
         for line in lines.iter() {
             let (a,b) = line.get_points(points);
-            let pos1 = a.pos.project_vertex_screen(screen_size);
-            let pos2 = b.pos.project_vertex_screen(screen_size);
+            let pos1 = a.pos.project_vertex_screen(screen_size, 0.1);
+            let pos2 = b.pos.project_vertex_screen(screen_size, 0.1);
             draw_line(pos1.0, pos1.1, pos2.0, pos2.1, 2.0, WHITE);
         }
 
         for point in points.iter() {
-            let pos1 = point.pos.project_vertex_screen(screen_size);
-            println!("{},{}", pos1.0,pos1.1);
-            draw_circle(pos1.0, pos1.1, 5.0, if point.locked { GOLD } else { RED });
+            if point.pos.on_screen(screen_size, 0.1) {
+                let pos1 = point.pos.project_vertex_screen(screen_size, 0.1);
+                println!("{},{}", pos1.0, pos1.1);
+                draw_circle(pos1.0, pos1.1, 5.0, if point.locked { GOLD } else { RED });
+            }
         }
 
         {
             let selected_point = &points[selected];
-            let pos1 = selected_point.pos.project_vertex_screen(screen_size);
+            let pos1 = selected_point.pos.project_vertex_screen(screen_size, 0.1);
             draw_circle(pos1.0, pos1.1, 4.0, BLUE);
         }
 
         if tool.to_string() == ToolTypes::LineOtherPoint.to_string() {
             let point = &points[selected];
-            let pos1 = point.pos.project_vertex_screen(screen_size);
+            let pos1 = point.pos.project_vertex_screen(screen_size, 0.1);
             draw_line(pos1.0, pos1.1, mouse_position().0, mouse_position().1, 3.0, GREEN);
         }
 
