@@ -131,34 +131,44 @@ pub async fn main() {
 
         // draw
         clear_background(BLACK);
+        let screen_size = (screen_width(),screen_height());
 
         for aabb in aabbs.iter() {
-            draw_rectangle(aabb.x, aabb.y, aabb.width, aabb.height, color::MAGENTA);
+            let pos1 = aabb.pos.project_vertex_screen(screen_size);
+            let pos2 = (aabb.pos + aabb.size).project_vertex_screen(screen_size);
+            draw_rectangle(pos1.0, pos1.1, pos2.0, pos2.1, MAGENTA);
         }
 
         for line in lines.iter() {
-            let (a,b) = line.get_both_points(points);
-            draw_line(a.x, a.y, b.x, b.y, 2.0, WHITE);
+            let (a,b) = line.get_points(points);
+            let pos1 = a.pos.project_vertex_screen(screen_size);
+            let pos2 = b.pos.project_vertex_screen(screen_size);
+            draw_line(pos1.0, pos1.1, pos2.0, pos2.1, 2.0, WHITE);
         }
 
         for point in points.iter() {
-            draw_circle(point.x, point.y, 5.0, if point.locked { GOLD } else { RED });
+            let pos1 = point.pos.project_vertex_screen(screen_size);
+            draw_circle(pos1.0, pos1.1, 5.0, if point.locked { GOLD } else { RED });
         }
 
-        let selected_point = &points[selected];
-        draw_circle(selected_point.x, selected_point.y, 4.0, BLUE);
+        {
+            let selected_point = &points[selected];
+            let pos1 = selected_point.pos.project_vertex_screen(screen_size);
+            draw_circle(pos1.0, pos1.1, 4.0, BLUE);
+        }
 
         if tool.to_string() == ToolTypes::LineOtherPoint.to_string() {
             let point = &points[selected];
-            draw_line(point.x, point.y, mouse_position().0, mouse_position().1, 3.0, GREEN);
+            let pos1 = point.pos.project_vertex_screen(screen_size);
+            draw_line(pos1.0, pos1.1, mouse_position().0, mouse_position().1, 3.0, GREEN);
         }
 
         if tool.to_string() == ToolTypes::AABBOtherPoint.to_string() {
-            draw_rectangle(box_corner[0], box_corner[1], mouse_position().0-box_corner[0], mouse_position().1-box_corner[1], color::PINK);
+            draw_rectangle(box_corner[0], box_corner[1], mouse_position().0-box_corner[0], mouse_position().1-box_corner[1], PINK);
         }
 
-        draw_text(&steps.to_string(),301.0,401.0,20.0,GREEN);
-        draw_text(&tool.to_string(),301.0,431.0,20.0,GREEN);
+        draw_text(&steps.to_string(),301.0,401.0,20.0,RED);
+        draw_text(&tool.to_string(),301.0,431.0,20.0,RED);
         draw_text(&steps.to_string(),300.0,400.0,20.0,WHITE);
         draw_text(&tool.to_string(),300.0,430.0,20.0,WHITE);
 
