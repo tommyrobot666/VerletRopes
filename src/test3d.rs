@@ -6,7 +6,7 @@ use crate::{
 use macroquad::prelude::*;
 
 pub async fn main() {
-    let mut rope_data = create_rope(Vector3{x:100.0,y:100.0,z:100.0},30.0,17,true);
+    let mut rope_data = create_rope(Vector3{x:0.1,y:0.1,z:100.0},0.3,17,true);
     let (points, lines) = (&mut rope_data.0, &mut rope_data.1);
     let aabbs = &mut Vec::with_capacity(8);
     let mut sim_paused:bool = true;
@@ -133,21 +133,21 @@ pub async fn main() {
         let screen_size = (screen_width(),screen_height());
 
         for aabb in aabbs.iter() {
-            let pos1 = aabb.pos.project_vertex_screen(screen_size, 0.1);
-            let pos2 = (aabb.pos + aabb.size).project_vertex_screen(screen_size, 0.1);
+            let pos1 = aabb.pos.project_vertex_screen(screen_size, 1.0);
+            let pos2 = (aabb.pos + aabb.size).project_vertex_screen(screen_size, 1.0);
             draw_rectangle(pos1.0, pos1.1, pos2.0, pos2.1, MAGENTA);
         }
 
         for line in lines.iter() {
             let (a,b) = line.get_points(points);
-            let pos1 = a.pos.project_vertex_screen(screen_size, 0.1);
-            let pos2 = b.pos.project_vertex_screen(screen_size, 0.1);
+            let pos1 = a.pos.project_vertex_screen(screen_size, 1.0);
+            let pos2 = b.pos.project_vertex_screen(screen_size, 1.0);
             draw_line(pos1.0, pos1.1, pos2.0, pos2.1, 2.0, WHITE);
         }
 
         for point in points.iter() {
-            if point.pos.on_screen(screen_size, 0.1) {
-                let pos1 = point.pos.project_vertex_screen(screen_size, 0.1);
+            if point.pos.on_screen(screen_size, 1.0) {
+                let pos1 = point.pos.project_vertex_screen(screen_size, 1.0);
                 println!("{},{}", pos1.0, pos1.1);
                 draw_circle(pos1.0, pos1.1, 5.0, if point.locked { GOLD } else { RED });
             }
@@ -155,13 +155,13 @@ pub async fn main() {
 
         {
             let selected_point = &points[selected];
-            let pos1 = selected_point.pos.project_vertex_screen(screen_size, 0.1);
+            let pos1 = selected_point.pos.project_vertex_screen(screen_size, 1.0);
             draw_circle(pos1.0, pos1.1, 4.0, BLUE);
         }
 
         if tool.to_string() == ToolTypes::LineOtherPoint.to_string() {
             let point = &points[selected];
-            let pos1 = point.pos.project_vertex_screen(screen_size, 0.1);
+            let pos1 = point.pos.project_vertex_screen(screen_size, 1.0);
             draw_line(pos1.0, pos1.1, mouse_position().0, mouse_position().1, 3.0, GREEN);
         }
 
@@ -188,10 +188,10 @@ fn get_point_near_mouse(points:&mut Vec<Point>) -> Option<usize> {
     for i in 0..points.len() {
         let point = &mut points[i];
 
-        let dist_x = point.pos.x - mx;
-        let dist_y = point.pos.y - my;
+        let dist_x = (point.pos.x * screen_width() * 1.0) - mx;
+        let dist_y = (point.pos.y * screen_height() * 1.0) - my;
 
-        if (dist_x*dist_x + dist_y*dist_y) < 25.0 {
+        if (dist_x*dist_x + dist_y*dist_y) < 100.0 {
             return Some(i);
         }
     }
