@@ -4,6 +4,7 @@ pub struct Line {
     pub length:f32
 }
 
+#[derive(Eq, PartialEq)]
 pub enum ToolTypes {
     Point,
     Line,

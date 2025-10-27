@@ -26,7 +26,7 @@ pub async fn main() {
             }
             aabb_dot_collision(aabbs, points);
         };
-        {
+        if tool != ToolTypes::Line {
             let point_near_mouse = get_point_near_mouse(points);
             if !point_near_mouse.is_none() {
                 selected = point_near_mouse.unwrap();
@@ -47,11 +47,12 @@ pub async fn main() {
                     point.locked = !point.locked;
                 },
                 ToolTypes::Point => {
+                    let (mx,my) = mouse_position();
                     if is_key_down(KeyCode::Tab) {
-                        combine_simulations((points,lines),create_rope(mouse_position().into(),35.0,15,true));
+                        combine_simulations((points,lines),create_rope(Vector3{x:mx,y:my,z:100.0},35.0,15,true));
                     } else {
                         points.push(
-                            Point::new(mouse_position().0, mouse_position().1, 100.0,true)
+                            Point::new(mx, my, 100.0,true)
                         );
                     }
                 }
@@ -72,55 +73,19 @@ pub async fn main() {
                     });
                 }
                 ToolTypes::Line => {
-                    // it was supposed to be that Line selects the first point and LineOtherPoint selects the second
-                    // but Select already has one point selected, so only one line tool is needed
-                    // edit: actually, im still going to do that (so that I don't have to switch tools)
+                    let point_near_mouse = get_point_near_mouse(points);
 
-
-                    // if i ever update this, remember to just ctrl-c+v all of the code from Select
-                    let (mx,my) = mouse_position();
-                    let point = &mut points[get_point_near_mouse(points)];
-
-                    let dist_x = point.x - mx;
-                    let dist_y = point.y - my;
-
-                    if (dist_x*dist_x + dist_y*dist_y) < 25.0 {
-                        selected = i;
-                        break;
-
-                    }
-
-                    // the only unique thing that makes this different from Select
-                    tool = ToolTypes::LineOtherPoint;
-                }
-                ToolTypes::LineOtherPoint => {
-                    let mut other_point = selected;
-
-                    // if i ever update this, remember to just ctrl-c+v all of the code from Select
-                    // and change "selected" to other_point
-                    let (mx,my) = mouse_position();
-                    for i in 0..points.len() {
-                        let point = &mut points[i];
-
-                        let dist_x = point.x - mx;
-                        let dist_y = point.y - my;
-
-                        if (dist_x*dist_x + dist_y*dist_y) < 25.0 {
-                            other_point = i;
-                            break;
+                    if !point_near_mouse.is_none() {
+                        let point = point_near_mouse.unwrap();
+                        if point != selected {
+                            lines.push(
+                                Line {
+                                    a: point,
+                                    b: selected,
+                                    length: 40.0,
+                                }
+                            );
                         }
-                    }
-
-                    // the real code
-                    if other_point != selected {
-                        lines.push(
-                            Line {
-                                a: other_point,
-                                b: selected,
-                                length: 40.0,
-                            }
-                        );
-                        tool = ToolTypes::Line;
                     }
                 }
                 ToolTypes::AABB => {
@@ -128,15 +93,17 @@ pub async fn main() {
                     tool = ToolTypes::AABBOtherPoint;
                 }
                 ToolTypes::AABBOtherPoint => {
+                    let other_box_corner = mouse_position().into();
                     aabbs.push(
                         AABB {
-                            x: box_corner[0],
-                            y: box_corner[1],
-                            width: mouse_position().0-box_corner[0],
-                            height: mouse_position().1-box_corner[1],
+                            pos: Vector3{x:box_corner[0],y:box_corner[1],z:50.0},
+                            size: Vector3{x:other_box_corner[0]*100.0,y:other_box_corner[1]*100.0,z:100.0}
                         }
                     );
                     tool = ToolTypes::AABB;
+                }
+                _ => {
+                    draw_text("This tool doesn't exist",50.0,50.0,20.0,WHITE);
                 }
             }
         }
